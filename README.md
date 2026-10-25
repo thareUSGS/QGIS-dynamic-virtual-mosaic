@@ -63,13 +63,13 @@ through QGIS's Plugin Manager.
 5. Choose **Create footprints** to add an in-memory polygon layer containing
    one footprint per image, with the full source address in the `path` field
    and separate `resolution_X` and `resolution_Y` attributes. Local file paths
-   and HTTPS/VSI source addresses are retained. **Export footprints** writes
-   that layer to a GeoPackage. By default, footprints use each image's outer
-   rectangular extent. Enable **Follow valid pixels (exclude NoData)** first
-   to polygonize raster validity masks instead; pixels must be valid in every
-   non-alpha band. This detailed mode scans the raster and can take longer,
-   especially for large or remote sources. The footprint layer is inserted at
-   the top of the layer list with 50% opacity.
+   are retained; HTTPS paths are stored without any leading GDAL VSI prefix.
+   **Export footprints** writes that layer to a GeoPackage. By default,
+   footprints use each image's outer rectangular extent. Enable **Follow valid
+   pixels (exclude NoData)** first to polygonize raster validity masks instead;
+   pixels must be valid in every non-alpha band. This detailed mode scans the
+   raster and can take longer, especially for large or remote sources. The
+   footprint layer is inserted at the top of the layer list with 50% opacity.
 
 The VRT is created or changed only by **Apply/Save**. Each save refreshes the
 displayed raster layer so source-order changes are visible. The table's

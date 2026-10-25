@@ -22,6 +22,13 @@ from qgis.core import (
 from .raster_utils import raster_info, source_name
 
 
+def _footprint_source_path(path):
+    """Return HTTPS source URLs without any GDAL VSI prefix."""
+    source_path = str(path)
+    https_index = source_path.lower().find("https://")
+    return source_path[https_index:] if https_index >= 0 else source_path
+
+
 def _source_footprint(info):
     """Build a polygon from all four raster corners, including rotation."""
     transform = info["geotransform"]
@@ -261,7 +268,7 @@ def create_footprint_layer(source_paths, vrt_path, valid_pixels=False):
         feature.setAttributes(
             [
                 source_name(path),
-                str(path),
+                _footprint_source_path(path),
                 info["resolution_x"],
                 info["resolution_y"],
                 info["bands"],
