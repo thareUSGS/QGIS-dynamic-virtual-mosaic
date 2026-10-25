@@ -17,6 +17,22 @@ Copy the `dynamic_virtual_mosaic` folder into the QGIS user profile's Python
 plugins directory, then enable **Dynamic Virtual Mosaic** from
 **Plugins > Manage and Install Plugins > Installed**.
 
+## Build a release
+
+The GitHub Actions workflow builds a QGIS-installable ZIP and publishes a
+GitHub Release when a version tag is pushed. The tag must match the version in
+`dynamic_virtual_mosaic/metadata.txt`, with a `v` prefix. For example, for
+version `0.1.0`, push the tag with:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release includes `QGIS-dynamic-virtual-mosaic-0.1.0.zip`. The ZIP contains
+the `dynamic_virtual_mosaic` plugin folder at its root, ready for installation
+through QGIS's Plugin Manager.
+
 ## Use
 
 1. Open **Dynamic Virtual Mosaic** from the Plugins menu or toolbar.

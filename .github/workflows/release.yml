@@ -1,0 +1,39 @@
+name: Build QGIS plugin release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Package plugin and publish release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Build QGIS plugin archive
+        id: package
+        run: >-
+          python scripts/package_plugin.py
+          --tag "${GITHUB_REF_NAME}"
+          --project-name "${GITHUB_REPOSITORY##*/}"
+          --output-directory dist
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.repository }} ${{ steps.package.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: ${{ steps.package.outputs.archive }}

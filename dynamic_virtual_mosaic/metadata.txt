@@ -2,7 +2,7 @@
 name=Dynamic Virtual Mosaic
 qgisMinimumVersion=3.22
 description=Build and manage ordered GDAL virtual raster mosaics with image footprints.
-version=1.0.0
+version=0.1.0
 author=QGIS Dynamic Virtual Mosaic contributors
 email=
 about=Create or load a VRT, reorder source images, apply changes on demand, and create image footprint layers.
