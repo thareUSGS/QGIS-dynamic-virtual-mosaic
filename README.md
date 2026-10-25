@@ -1,7 +1,8 @@
 # Dynamic Virtual Mosaic for QGIS
 
 This QGIS plugin creates and edits ordered GDAL virtual raster mosaics (VRTs).
-It requires QGIS 3.22 or newer and uses the GDAL bindings included with QGIS.
+It supports QGIS 3.22 through 4.x and uses the GDAL bindings included with
+QGIS.
 
 ## Code layout
 
