@@ -602,7 +602,10 @@ class DynamicVirtualMosaicPlugin:
 
         if self.footprints_layer and self.footprints_layer.isValid():
             QgsProject.instance().removeMapLayer(self.footprints_layer.id())
-        QgsProject.instance().addMapLayer(layer)
+        layer.setOpacity(0.5)
+        project = QgsProject.instance()
+        project.addMapLayer(layer, False)
+        project.layerTreeRoot().insertLayer(0, layer)
         self.footprints_layer = layer
 
     def export_footprints(self):
