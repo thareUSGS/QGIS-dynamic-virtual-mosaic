@@ -3,13 +3,70 @@
 import math
 import os
 import xml.etree.ElementTree as ET
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 from osgeo import gdal, osr
 
 
+def _is_remote_source(source):
+    """Recognize URLs and GDAL virtual filesystem source names."""
+    return source.startswith("/vsi") or urlsplit(source).scheme.lower() in (
+        "http",
+        "https",
+    )
+
+
 def path_key(path):
-    """Return a normalized path key for case-insensitive Windows comparisons."""
-    return os.path.normcase(os.path.abspath(path))
+    """Return a stable key for local paths, VSI paths, and remote URLs."""
+    source = str(path)
+    vsi_prefix = ""
+    if source.startswith("/vsi"):
+        vsi_position = source.find("/http")
+        if vsi_position >= 0:
+            vsi_prefix = source[: vsi_position + 1]
+            source = source[vsi_position + 1 :]
+        else:
+            return source
+
+    parsed = urlsplit(source)
+    if parsed.scheme.lower() in ("http", "https"):
+        normalized_url = urlunsplit(
+            (
+                parsed.scheme.lower(),
+                parsed.netloc.lower(),
+                parsed.path,
+                parsed.query,
+                parsed.fragment,
+            )
+        )
+        return vsi_prefix + normalized_url
+
+    if vsi_prefix:
+        return vsi_prefix + source
+    return os.path.normcase(os.path.abspath(source))
+
+
+def normalize_source_path(path):
+    """Preserve URLs and GDAL VSI paths; normalize only local filesystem paths."""
+    source = str(path)
+    if _is_remote_source(source):
+        return source
+    return os.path.abspath(source)
+
+
+def source_name(path):
+    """Return a readable raster filename from a path or remote source URI."""
+    source = str(path)
+    if source.startswith("/vsi"):
+        vsi_position = source.find("/http")
+        if vsi_position >= 0:
+            source = source[vsi_position + 1 :]
+    parsed = urlsplit(source)
+    if parsed.scheme.lower() in ("http", "https"):
+        path_part = unquote(parsed.path)
+    else:
+        path_part = source
+    return os.path.basename(path_part.rstrip("/")) or source
 
 
 def raster_info(path):
@@ -87,7 +144,7 @@ def projection_differences(paths):
             and bool(reference_projection.IsSame(projection))
         )
         if not matches_reference:
-            different_sources.append(os.path.basename(path))
+            different_sources.append(source_name(path))
 
     return different_sources
 
@@ -103,9 +160,11 @@ def vrt_sources(path):
             continue
 
         source = element.text.strip()
-        if element.attrib.get("relativeToVRT") == "1":
+        if element.attrib.get("relativeToVRT") == "1" and not _is_remote_source(
+            source
+        ):
             source = os.path.join(os.path.dirname(path), source)
-        source = os.path.abspath(source)
+        source = normalize_source_path(source)
 
         key = path_key(source)
         if key not in source_keys:
@@ -126,10 +185,17 @@ def make_sources_relative(vrt_path, final_path):
             continue
 
         source = element.text.strip()
-        if element.attrib.get("relativeToVRT") == "1":
+        if element.attrib.get("relativeToVRT") == "1" and not _is_remote_source(
+            source
+        ):
             source = os.path.normpath(
                 os.path.join(os.path.dirname(vrt_path), source)
             )
+
+        if _is_remote_source(source):
+            element.text = source
+            element.set("relativeToVRT", "0")
+            continue
 
         try:
             # relpath raises ValueError for sources on another Windows drive.

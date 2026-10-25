@@ -38,7 +38,9 @@ through QGIS's Plugin Manager.
 1. Open **Dynamic Virtual Mosaic** from the Plugins menu or toolbar.
 2. Choose **Add images** to build a VRT from raster files, or **Load VRT** to
    populate the table from an existing VRT.
-3. Use **Move up**, **Move down**, and **Remove** to edit the pending image
+3. Use **Add from group** to import GDAL raster layers from a QGIS layer-tree
+   group, including remote GeoTIFF/COG layers loaded from HTTPS URLs. Use
+   **Move up**, **Move down**, and **Remove** to edit the pending image
    order. **Undo** restores the previous pending table and output selection;
    it does not roll back a VRT that was already applied to disk.
 4. Choose **Apply** to write the VRT. On the first apply, choose an output

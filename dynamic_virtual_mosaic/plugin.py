@@ -8,10 +8,13 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (
     QAction,
     QFileDialog,
+    QInputDialog,
     QMessageBox,
     QTableWidgetItem,
 )
 from qgis.core import (
+    QgsLayerTreeGroup,
+    QgsLayerTreeLayer,
     QgsProject,
     QgsRasterLayer,
 )
@@ -21,9 +24,11 @@ from .footprint_utils import create_footprint_layer, export_footprint_layer
 from .raster_utils import (
     build_vrt,
     make_sources_relative,
+    normalize_source_path,
     path_key,
     projection_differences,
     raster_info,
+    source_name,
     vrt_sources,
 )
 
@@ -95,7 +100,7 @@ class DynamicVirtualMosaicPlugin:
             info = raster_info(path)
             values = (
                 str(committed.get(path_key(path), row + 1)),
-                os.path.basename(path),
+                source_name(path),
                 info["resolution"],
                 str(info["bands"]),
                 info["extent"],
@@ -162,21 +167,94 @@ class DynamicVirtualMosaicPlugin:
         )
         if not paths:
             return
-        try:
-            for path in paths:
-                raster_info(path)
-        except (RuntimeError, OSError) as error:
-            self._error(str(error))
+        self._add_sources(paths)
+
+    def add_from_group(self):
+        """Append GDAL-backed raster layers from a selected project layer group."""
+        groups = {}
+
+        def collect_groups(group, group_path):
+            group_sources = []
+            for node in group.findLayers():
+                layer = node.layer()
+                if (
+                    isinstance(node, QgsLayerTreeLayer)
+                    and isinstance(layer, QgsRasterLayer)
+                    and layer.isValid()
+                    and layer.providerType() == "gdal"
+                ):
+                    group_sources.append(layer.source())
+
+            if group_sources:
+                groups[group_path] = group_sources
+
+            for child in group.children():
+                if isinstance(child, QgsLayerTreeGroup):
+                    child_path = "{}/{}".format(group_path, child.name())
+                    collect_groups(child, child_path)
+
+        root = QgsProject.instance().layerTreeRoot()
+        for child in root.children():
+            if isinstance(child, QgsLayerTreeGroup):
+                collect_groups(child, child.name())
+
+        if not groups:
+            self._error(
+                "No groups with valid GDAL raster layers were found in the project."
+            )
             return
-        self._push_undo()
-        normalized_paths = [os.path.abspath(path) for path in paths]
+
+        group_names = list(groups)
+        selected_group, accepted = QInputDialog.getItem(
+            self.widget,
+            "Add images from group",
+            "Choose a group of GDAL raster layers:",
+            group_names,
+            0,
+            False,
+        )
+        if accepted and selected_group:
+            self._add_sources(groups[selected_group])
+
+    def _add_sources(self, sources):
+        """Validate and append local paths or remote URIs to the pending list."""
         existing_paths = {path_key(path) for path in self.images}
-        for path in normalized_paths:
-            key = path_key(path)
-            if key not in existing_paths:
-                self.images.append(path)
-                existing_paths.add(key)
-        self._refresh_table()
+        accepted_sources = []
+        errors = []
+
+        for source in sources:
+            normalized_source = normalize_source_path(source)
+            source_key = path_key(normalized_source)
+            if source_key in existing_paths:
+                continue
+
+            try:
+                raster_info(normalized_source)
+            except (RuntimeError, OSError, ValueError) as error:
+                errors.append(
+                    "{}: {}".format(source_name(normalized_source), error)
+                )
+                continue
+
+            accepted_sources.append(normalized_source)
+            existing_paths.add(source_key)
+
+        if accepted_sources:
+            self._push_undo()
+            self.images.extend(accepted_sources)
+            self._refresh_table()
+        elif not errors:
+            self._error("The selected source list contains no new raster images.")
+            return
+
+        if errors:
+            QMessageBox.warning(
+                self.widget,
+                "Some images could not be added",
+                "Skipped raster sources that GDAL could not open:\n\n{}".format(
+                    "\n".join(errors)
+                ),
+            )
 
     def load_vrt(self):
         """Load an existing VRT, populate its source list, and display that VRT."""
@@ -346,7 +424,7 @@ class DynamicVirtualMosaicPlugin:
                 path for path in self.images if path_key(path) not in built_keys
             ]
             if missing_sources:
-                names = ", ".join(os.path.basename(path) for path in missing_sources)
+                names = ", ".join(source_name(path) for path in missing_sources)
                 raise RuntimeError(
                     "GDAL did not include these source images: {}".format(names)
                 )
@@ -392,7 +470,7 @@ class DynamicVirtualMosaicPlugin:
         self.displayed_path = None
         if path is None:
             return
-        layer = QgsRasterLayer(path, os.path.splitext(os.path.basename(path))[0])
+        layer = QgsRasterLayer(path, os.path.splitext(source_name(path))[0])
         if not layer.isValid():
             self._error("The VRT was saved, but QGIS could not load it as a raster layer.")
             return

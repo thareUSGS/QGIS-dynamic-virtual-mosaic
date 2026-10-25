@@ -16,7 +16,7 @@ from qgis.core import (
     QgsVectorLayer,
 )
 
-from .raster_utils import raster_info
+from .raster_utils import raster_info, source_name
 
 
 def _source_footprint(info):
@@ -68,7 +68,7 @@ def create_footprint_layer(source_paths, vrt_path):
     project = QgsProject.instance()
     for image_order, path in enumerate(source_paths, start=1):
         info = raster_info(path)
-        source_layer = QgsRasterLayer(path, os.path.basename(path))
+        source_layer = QgsRasterLayer(path, source_name(path))
         if not source_layer.isValid():
             raise RuntimeError(
                 "Could not open the footprint source raster: {}".format(path)
@@ -97,7 +97,7 @@ def create_footprint_layer(source_paths, vrt_path):
         feature.setGeometry(geometry)
         feature.setAttributes(
             [
-                os.path.basename(path),
+                source_name(path),
                 info["resolution"],
                 info["bands"],
                 image_order,

@@ -1,6 +1,7 @@
 """Widget layout for the Dynamic Virtual Mosaic plugin."""
 
 from qgis.PyQt.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QHBoxLayout,
     QLabel,
@@ -53,6 +54,7 @@ class DynamicVirtualMosaicDialog(QWidget):
         # Keep related actions in separate rows so the table remains easy to scan.
         file_actions = QHBoxLayout()
         self._add_button(file_actions, "Add images", controller.add_images)
+        self._add_button(file_actions, "Add from group", controller.add_from_group)
         self._add_button(file_actions, "Load VRT", controller.load_vrt)
         self._add_button(file_actions, "Remove", controller.remove_selected)
         layout.addLayout(file_actions)
@@ -83,9 +85,9 @@ class DynamicVirtualMosaicDialog(QWidget):
         """Create a read-only, single-row-selection table for source rasters."""
         table = QTableWidget(0, len(self.HEADERS), self)
         table.setHorizontalHeaderLabels(self.HEADERS)
-        table.setSelectionBehavior(QTableWidget.SelectRows)
-        table.setSelectionMode(QTableWidget.SingleSelection)
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         table.horizontalHeader().setStretchLastSection(True)
         return table
 
