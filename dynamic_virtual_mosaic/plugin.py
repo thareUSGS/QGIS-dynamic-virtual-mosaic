@@ -108,7 +108,7 @@ class DynamicVirtualMosaicPlugin:
             for column, value in enumerate(values):
                 item = QTableWidgetItem(value)
                 if column == 0:
-                    item.setTextAlignment(Qt.AlignCenter)
+                    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 if column == 1:
                     item.setToolTip(path)
                 self.table.setItem(row, column, item)

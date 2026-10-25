@@ -3,17 +3,17 @@
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
+    QDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QTableWidget,
     QVBoxLayout,
-    QWidget,
 )
 
 
-class DynamicVirtualMosaicDialog(QWidget):
+class DynamicVirtualMosaicDialog(QDialog):
     """Present the mosaic table and connect controls to the plugin controller."""
 
     HEADERS = ("Order", "Image", "Resolution", "Bands", "Extent")
