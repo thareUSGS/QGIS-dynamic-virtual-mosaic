@@ -49,6 +49,12 @@ def package_plugin(project_name, version, output_directory):
                 PLUGIN_DIRECTORY
             )
             archive.write(file_path, archive_path_in_zip.as_posix())
+        project_license = REPOSITORY_ROOT / "LICENSE"
+        if project_license.is_file():
+            archive.write(
+                project_license,
+                (Path(PLUGIN_DIRECTORY.name) / "LICENSE").as_posix(),
+            )
 
     return archive_path
 

@@ -1,5 +1,6 @@
 """QGIS user interface and workflow for ordered GDAL VRT mosaics."""
 
+import math
 import os
 import tempfile
 import xml.etree.ElementTree as ET
@@ -43,6 +44,7 @@ class DynamicVirtualMosaicPlugin:
         self.table = None
         # `images` is the editable list; `applied_order` is the last saved VRT.
         self.images = []
+        self.order_values = {}
         self.output_path = None
         self.applied_order = []
         # Undo snapshots restore the in-memory list, not a previously saved VRT.
@@ -86,34 +88,106 @@ class DynamicVirtualMosaicPlugin:
     def _push_undo(self):
         """Save the current table and applied-order state before a user edit."""
         self.undo_stack.append(
-            (list(self.images), self.output_path, list(self.applied_order))
+            (
+                list(self.images),
+                self.output_path,
+                list(self.applied_order),
+                dict(self.order_values),
+            )
         )
 
     def _refresh_table(self):
-        """Render the pending list while retaining each source's last applied rank."""
+        """Render the source list and retain each image's editable order value."""
+        table = self.table
+        header = table.horizontalHeader()
+        sort_column = header.sortIndicatorSection()
+        sort_order = header.sortIndicatorOrder()
+        signals_blocked = table.blockSignals(True)
+        table.setSortingEnabled(False)
         self.table.setRowCount(len(self.images))
-        committed = {
-            path_key(path): index + 1
-            for index, path in enumerate(self.applied_order)
-        }
         for row, path in enumerate(self.images):
+            source_key = path_key(path)
+            self.order_values.setdefault(source_key, float(row + 1))
             info = raster_info(path)
             values = (
-                str(committed.get(path_key(path), row + 1)),
+                format(self.order_values[source_key], ".15g"),
                 source_name(path),
                 info["resolution"],
                 str(info["bands"]),
                 info["extent"],
             )
             for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
+                item = (
+                    NumericTableWidgetItem(value)
+                    if column == 0
+                    else QTableWidgetItem(value)
+                )
+                if column == 0:
+                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+                else:
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 if column == 0:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 if column == 1:
                     item.setToolTip(path)
+                    item.setData(Qt.ItemDataRole.UserRole, path)
+                elif column == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, path)
                 self.table.setItem(row, column, item)
+        table.setSortingEnabled(True)
+        if sort_column >= 0:
+            table.sortItems(sort_column, sort_order)
+        table.blockSignals(signals_blocked)
         self.table.resizeColumnsToContents()
         self._refresh_projection_status()
+
+    def _sync_images_from_table(self, update_order_values=True):
+        """Use the currently displayed row order as the pending VRT order."""
+        ordered_images = []
+        for row in range(self.table.rowCount()):
+            source_item = self.table.item(row, 1)
+            order_item = self.table.item(row, 0)
+            if source_item is None:
+                continue
+            source = source_item.data(Qt.ItemDataRole.UserRole)
+            if not source:
+                continue
+            ordered_images.append(source)
+            if order_item is not None and update_order_values:
+                self.order_values[path_key(source)] = float(order_item.text())
+        if len(ordered_images) == len(self.images):
+            self.images = ordered_images
+
+    def on_table_item_changed(self, item):
+        """Validate editable numeric order values and retain them for sorting."""
+        if item.column() != 0:
+            return
+
+        source = item.data(Qt.ItemDataRole.UserRole)
+        if not source:
+            return
+        source_key = path_key(source)
+        try:
+            value = float(item.text())
+            if not math.isfinite(value):
+                raise ValueError
+        except ValueError:
+            previous_value = self.order_values.get(source_key)
+            self.table.blockSignals(True)
+            item.setText(
+                format(previous_value, ".15g") if previous_value is not None else ""
+            )
+            self.table.blockSignals(False)
+            QMessageBox.warning(
+                self.widget,
+                "Invalid order value",
+                "Enter a finite numeric value in the Order column.",
+            )
+            return
+
+        self._push_undo()
+        self._sync_images_from_table(update_order_values=False)
+        self.order_values[source_key] = value
 
     def _refresh_projection_status(self):
         """Explain mixed source CRSs and the effect of the GDAL opt-in."""
@@ -218,6 +292,7 @@ class DynamicVirtualMosaicPlugin:
 
     def _add_sources(self, sources):
         """Validate and append local paths or remote URIs to the pending list."""
+        self._sync_images_from_table()
         existing_paths = {path_key(path) for path in self.images}
         accepted_sources = []
         errors = []
@@ -241,7 +316,10 @@ class DynamicVirtualMosaicPlugin:
 
         if accepted_sources:
             self._push_undo()
+            first_order = len(self.images) + 1
             self.images.extend(accepted_sources)
+            for offset, source in enumerate(accepted_sources):
+                self.order_values[path_key(source)] = float(first_order + offset)
             self._refresh_table()
         elif not errors:
             self._error("The selected source list contains no new raster images.")
@@ -273,8 +351,13 @@ class DynamicVirtualMosaicPlugin:
             self._error("Could not load VRT: {}".format(error))
             return
 
+        self._sync_images_from_table()
         self._push_undo()
         self.images = sources
+        self.order_values = {
+            path_key(source): float(index + 1)
+            for index, source in enumerate(sources)
+        }
         self.output_path = os.path.abspath(path)
         self.applied_order = list(sources)
         self._replace_mosaic_layer(self.output_path)
@@ -282,20 +365,27 @@ class DynamicVirtualMosaicPlugin:
 
     def remove_selected(self):
         """Remove the selected source from the pending list."""
+        self._sync_images_from_table()
         row = self.table.currentRow()
         if row < 0 or row >= len(self.images):
             return
         self._push_undo()
-        del self.images[row]
+        removed_source = self.images.pop(row)
+        self.order_values.pop(path_key(removed_source), None)
         self._refresh_table()
 
     def move_selected(self, direction):
         """Move the selected source one row without applying the change."""
+        self._sync_images_from_table()
         row = self.table.currentRow()
         destination = row + direction
         if row < 0 or destination < 0 or destination >= len(self.images):
             return
         self._push_undo()
+        self.table.setSortingEnabled(False)
+        self.table.horizontalHeader().setSortIndicator(
+            -1, Qt.SortOrder.AscendingOrder
+        )
         self.images[row], self.images[destination] = (
             self.images[destination],
             self.images[row],
@@ -307,7 +397,12 @@ class DynamicVirtualMosaicPlugin:
         """Restore the previous table, output path, and applied-order snapshot."""
         if not self.undo_stack:
             return
-        self.images, self.output_path, self.applied_order = self.undo_stack.pop()
+        (
+            self.images,
+            self.output_path,
+            self.applied_order,
+            self.order_values,
+        ) = self.undo_stack.pop()
         self._replace_mosaic_layer(
             self.output_path
             if self.output_path and os.path.isfile(self.output_path)
@@ -319,6 +414,7 @@ class DynamicVirtualMosaicPlugin:
 
     def apply(self):
         """Build a replacement VRT, then refresh its QGIS layer after success."""
+        self._sync_images_from_table()
         if not self.images:
             self._error("Add at least one image before applying the mosaic.")
             return
@@ -435,7 +531,7 @@ class DynamicVirtualMosaicPlugin:
                 self.mosaic_layer
                 and self.displayed_path == path_key(self.output_path)
             ):
-                restore_layer_path = self.displayed_path
+                restore_layer_path = self.output_path
                 self._replace_mosaic_layer(None)
             # Build beside the destination so replacement is atomic on the same drive.
             os.replace(temporary_path, self.output_path)
@@ -454,8 +550,8 @@ class DynamicVirtualMosaicPlugin:
         self._replace_mosaic_layer(self.output_path, force=True)
 
     def _replace_mosaic_layer(self, path, force=False):
-        """Show the saved VRT in QGIS, replacing a stale layer when necessary."""
-        normalized_path = os.path.abspath(path) if path else None
+        """Reload the VRT as a top-level layer, above groups and other layers."""
+        normalized_path = path_key(path) if path else None
         if (
             not force
             and self.mosaic_layer
@@ -463,7 +559,7 @@ class DynamicVirtualMosaicPlugin:
             and self.displayed_path == normalized_path
         ):
             return
-        if self.mosaic_layer and self.mosaic_layer.isValid():
+        if self.mosaic_layer:
             project = QgsProject.instance()
             project.removeMapLayer(self.mosaic_layer.id())
         self.mosaic_layer = None
@@ -474,7 +570,9 @@ class DynamicVirtualMosaicPlugin:
         if not layer.isValid():
             self._error("The VRT was saved, but QGIS could not load it as a raster layer.")
             return
-        QgsProject.instance().addMapLayer(layer)
+        project = QgsProject.instance()
+        project.addMapLayer(layer, False)
+        project.layerTreeRoot().insertLayer(0, layer)
         self.mosaic_layer = layer
         self.displayed_path = normalized_path
 

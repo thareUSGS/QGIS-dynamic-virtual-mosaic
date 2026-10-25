@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#183a66"/>
+      <stop offset="1" stop-color="#286a8b"/>
+    </linearGradient>
+    <clipPath id="photo">
+      <rect x="11" y="10" width="42" height="36" rx="5"/>
+    </clipPath>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="url(#background)"/>
+  <path d="M13 51h37l5 4H18z" fill="#a9d4e3" opacity=".8"/>
+  <path d="M10 47h39l5 4H15z" fill="#d7edf2"/>
+  <g clip-path="url(#photo)">
+    <rect x="11" y="10" width="42" height="36" fill="#c9e7ed"/>
+    <circle cx="42" cy="20" r="5" fill="#f6c86b"/>
+    <path d="M7 37 21 23l9 9 7-7 18 17v5H7z" fill="#5eaa79"/>
+    <path d="m19 29 3-3 9 9-4 4zM36 29l2-2 18 17h-6z" fill="#eaf5e8" opacity=".9"/>
+    <path d="M11 10h42v36H11z" fill="none" stroke="#fff" stroke-width="1.5" opacity=".8"/>
+    <path d="M25 10v36M39 10v36M11 22h42M11 34h42" fill="none" stroke="#fff" stroke-width="1" opacity=".45"/>
+  </g>
+  <rect x="11" y="10" width="42" height="36" rx="5" fill="none" stroke="#fff" stroke-width="2"/>
+  <circle cx="48" cy="47" r="9" fill="#f2a94a" stroke="#fff" stroke-width="2"/>
+  <path d="M48 41v12M42 47h12" stroke="#173b62" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -12,6 +12,12 @@ QGIS.
 - `footprint_utils.py` builds the in-memory footprint layer and exports it.
 - `metadata.txt` and `__init__.py` provide the QGIS plugin registration details.
 
+## License
+
+This project is dedicated to the public domain under
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+See [LICENSE](./LICENSE) for the full legal text.
+
 ## Install
 
 Copy the `dynamic_virtual_mosaic` folder into the QGIS user profile's Python
@@ -44,17 +50,22 @@ through QGIS's Plugin Manager.
    **Move up**, **Move down**, and **Remove** to edit the pending image
    order. **Undo** restores the previous pending table and output selection;
    it does not roll back a VRT that was already applied to disk.
-4. Choose **Apply** to write the VRT. On the first apply, choose an output
-   `.vrt` path. Later applies update that same file. Source references are
-   stored relative to the output directory whenever possible.
+   Click a column heading to sort the table. The numeric **Order** values can
+   be edited, and Apply/Save uses the currently displayed row order.
+4. Choose **Apply/Save** to write the VRT. On the first apply, choose an output
+   `.vrt` path. Later applies rebuild and overwrite that file, then reload the
+   VRT in QGIS at the top of the layer list, outside any selected group. Source
+   references are stored relative to the output directory whenever possible.
    Optionally enter a numeric **VRT NoData override**; leave it blank to use
    GDAL's normal source NoData behavior. The value applies to every VRT band.
 5. Choose **Create footprints** to add an in-memory polygon layer containing
    one footprint per image. **Export footprints** writes that layer to a
    GeoPackage.
 
-The VRT is created or changed only by **Apply**. The table's **Order** column
-shows the last applied numeric source order and is refreshed after applying.
+The VRT is created or changed only by **Apply/Save**. Each save refreshes the
+displayed raster layer so source-order changes are visible. The table's
+**Order** column is an editable numeric sort key.
+
 Footprints use each source raster's full pixel extent and the VRT's coordinate
 reference system.
 
