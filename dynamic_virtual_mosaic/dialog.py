@@ -61,13 +61,13 @@ class DynamicVirtualMosaicDialog(QDialog):
         layout.addWidget(self.projection_status)
 
         self.valid_pixel_footprints = QCheckBox(
-            "Follow valid pixels (exclude NoData)",
+            "For footprints, follow valid pixels (exclude NoData; may take a long time)",
             self,
         )
         self.valid_pixel_footprints.setToolTip(
             "Creates a more detailed footprint by scanning raster validity masks. "
             "A pixel is included only when all non-alpha bands are valid. "
-            "This can take longer for large or remote rasters."
+            "This may take a long time for large or remote rasters."
         )
         layout.addWidget(self.valid_pixel_footprints)
 
