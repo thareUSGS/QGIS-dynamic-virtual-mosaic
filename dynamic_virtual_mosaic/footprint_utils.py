@@ -214,7 +214,8 @@ def create_footprint_layer(source_paths, vrt_path, valid_pixels=False):
     provider = layer.dataProvider()
     fields = [
         QgsField("image", QVariant.String),
-        QgsField("resolution", QVariant.String),
+        QgsField("resolution_X", QVariant.String),
+        QgsField("resolution_Y", QVariant.String),
         QgsField("bands", QVariant.Int),
         QgsField("order", QVariant.Int),
     ]
@@ -259,7 +260,8 @@ def create_footprint_layer(source_paths, vrt_path, valid_pixels=False):
         feature.setAttributes(
             [
                 source_name(path),
-                info["resolution"],
+                info["resolution_x"],
+                info["resolution_y"],
                 info["bands"],
                 image_order,
             ]
