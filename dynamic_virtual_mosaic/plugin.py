@@ -50,6 +50,7 @@ class DynamicVirtualMosaicPlugin:
         # Undo snapshots restore the in-memory list, not a previously saved VRT.
         self.undo_stack = []
         self.mosaic_layer = None
+        self.mosaic_layer_id = None
         self.displayed_path = None
         self.footprints_layer = None
 
@@ -528,7 +529,7 @@ class DynamicVirtualMosaicPlugin:
 
             # Release the VRT before replacing it; GDAL may keep it open on Windows.
             if (
-                self.mosaic_layer
+                self.mosaic_layer_id
                 and self.displayed_path == path_key(self.output_path)
             ):
                 restore_layer_path = self.output_path
@@ -551,18 +552,24 @@ class DynamicVirtualMosaicPlugin:
 
     def _replace_mosaic_layer(self, path, force=False):
         """Reload the VRT as a top-level layer, above groups and other layers."""
+        project = QgsProject.instance()
         normalized_path = path_key(path) if path else None
+        current_layer = (
+            project.mapLayer(self.mosaic_layer_id)
+            if self.mosaic_layer_id
+            else None
+        )
         if (
             not force
-            and self.mosaic_layer
-            and self.mosaic_layer.isValid()
+            and current_layer
+            and current_layer.isValid()
             and self.displayed_path == normalized_path
         ):
             return
-        if self.mosaic_layer:
-            project = QgsProject.instance()
-            project.removeMapLayer(self.mosaic_layer.id())
+        if self.mosaic_layer_id:
+            project.removeMapLayer(self.mosaic_layer_id)
         self.mosaic_layer = None
+        self.mosaic_layer_id = None
         self.displayed_path = None
         if path is None:
             return
@@ -570,10 +577,10 @@ class DynamicVirtualMosaicPlugin:
         if not layer.isValid():
             self._error("The VRT was saved, but QGIS could not load it as a raster layer.")
             return
-        project = QgsProject.instance()
         project.addMapLayer(layer, False)
         project.layerTreeRoot().insertLayer(0, layer)
         self.mosaic_layer = layer
+        self.mosaic_layer_id = layer.id()
         self.displayed_path = normalized_path
 
     # In-memory footprints and GeoPackage export
