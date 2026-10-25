@@ -20,7 +20,7 @@ from qgis.core import (
     QgsRasterLayer,
 )
 
-from .dialog import DynamicVirtualMosaicDialog
+from .dialog import DynamicVirtualMosaicDialog, NumericTableWidgetItem
 from .footprint_utils import create_footprint_layer, export_footprint_layer
 from .raster_utils import (
     build_vrt,
