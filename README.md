@@ -60,14 +60,17 @@ through QGIS's Plugin Manager.
    GDAL's normal source NoData behavior. The value applies to every VRT band.
 5. Choose **Create footprints** to add an in-memory polygon layer containing
    one footprint per image. **Export footprints** writes that layer to a
-   GeoPackage.
+   GeoPackage. By default, footprints use each image's outer rectangular
+   extent. Enable **Follow valid pixels (exclude NoData)** first to polygonize
+   raster validity masks instead; pixels must be valid in every non-alpha band.
+   This detailed mode scans the raster and can take longer, especially for
+   large or remote sources.
 
 The VRT is created or changed only by **Apply/Save**. Each save refreshes the
 displayed raster layer so source-order changes are visible. The table's
 **Order** column is an editable numeric sort key.
 
-Footprints use each source raster's full pixel extent and the VRT's coordinate
-reference system.
+Footprints are expressed in the VRT's coordinate reference system.
 
 When source projections differ, the dialog lists the affected images and Apply
 is blocked unless **Allow images with different projections** is selected.

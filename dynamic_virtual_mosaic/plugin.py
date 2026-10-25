@@ -591,7 +591,11 @@ class DynamicVirtualMosaicPlugin:
             self._error("Apply or load a VRT before creating footprints.")
             return
         try:
-            layer = create_footprint_layer(self.applied_order, self.output_path)
+            layer = create_footprint_layer(
+                self.applied_order,
+                self.output_path,
+                valid_pixels=self.widget.valid_pixel_footprints.isChecked(),
+            )
         except (RuntimeError, OSError, ValueError) as error:
             self._error("Could not create footprints: {}".format(error))
             return
