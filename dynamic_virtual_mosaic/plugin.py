@@ -53,6 +53,7 @@ class DynamicVirtualMosaicPlugin:
         self.mosaic_layer_id = None
         self.displayed_path = None
         self.footprints_layer = None
+        self.footprints_layer_id = None
 
     # Plugin lifecycle
 
@@ -600,17 +601,23 @@ class DynamicVirtualMosaicPlugin:
             self._error("Could not create footprints: {}".format(error))
             return
 
-        if self.footprints_layer and self.footprints_layer.isValid():
-            QgsProject.instance().removeMapLayer(self.footprints_layer.id())
-        layer.setOpacity(0.5)
         project = QgsProject.instance()
+        if self.footprints_layer_id:
+            project.removeMapLayer(self.footprints_layer_id)
+        layer.setOpacity(0.5)
         project.addMapLayer(layer, False)
         project.layerTreeRoot().insertLayer(0, layer)
         self.footprints_layer = layer
+        self.footprints_layer_id = layer.id()
 
     def export_footprints(self):
         """Write the current in-memory footprint layer to a GeoPackage."""
-        if not self.footprints_layer or not self.footprints_layer.isValid():
+        layer = (
+            QgsProject.instance().mapLayer(self.footprints_layer_id)
+            if self.footprints_layer_id
+            else None
+        )
+        if not layer or not layer.isValid():
             self._error("Create the footprint layer before exporting it.")
             return
         path, _ = QFileDialog.getSaveFileName(
@@ -621,6 +628,6 @@ class DynamicVirtualMosaicPlugin:
         if not path.lower().endswith(".gpkg"):
             path += ".gpkg"
         try:
-            export_footprint_layer(self.footprints_layer, path)
+            export_footprint_layer(layer, path)
         except RuntimeError as error:
             self._error(str(error))
