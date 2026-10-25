@@ -28,7 +28,7 @@ class NumericTableWidgetItem(QTableWidgetItem):
 class DynamicVirtualMosaicDialog(QDialog):
     """Present the mosaic table and connect controls to the plugin controller."""
 
-    HEADERS = ("Order", "Image", "Resolution", "Bands", "Extent")
+    HEADERS = ("Order", "Image", "Resolution X", "Resolution Y", "Bands", "Extent")
 
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -103,7 +103,7 @@ class DynamicVirtualMosaicDialog(QDialog):
         )
         layout.addLayout(mosaic_actions)
 
-        self.resize(760, 520)
+        self.resize(900, 520)
 
     def _create_table(self):
         """Create a sortable table with an editable numeric order column."""

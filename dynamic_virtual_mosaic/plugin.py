@@ -114,7 +114,8 @@ class DynamicVirtualMosaicPlugin:
             values = (
                 format(self.order_values[source_key], ".15g"),
                 source_name(path),
-                info["resolution"],
+                info["resolution_x"],
+                info["resolution_y"],
                 str(info["bands"]),
                 info["extent"],
             )

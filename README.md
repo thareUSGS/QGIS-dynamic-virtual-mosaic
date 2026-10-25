@@ -44,7 +44,9 @@ through QGIS's Plugin Manager.
 
 1. Open **Dynamic Virtual Mosaic** from the Plugins menu or toolbar.
 2. Choose **Add images** to build a VRT from raster files, or **Load VRT** to
-   populate the table from an existing VRT.
+   populate the table from an existing VRT. The table shows each image's
+   horizontal (**Resolution X**) and vertical (**Resolution Y**) pixel sizes
+   separately.
 3. Use **Add from group** to import GDAL raster layers from a QGIS layer-tree
    group, including remote GeoTIFF/COG layers loaded from HTTPS URLs. Use
    **Move up**, **Move down**, and **Remove** to edit the pending image

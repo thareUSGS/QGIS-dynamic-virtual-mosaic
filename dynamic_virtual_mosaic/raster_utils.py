@@ -89,11 +89,12 @@ def raster_info(path):
     xs, ys = zip(*coordinates)
 
     # Pixel vectors account for rotated rasters as well as north-up images.
+    resolution_x = math.hypot(transform[1], transform[4])
+    resolution_y = math.hypot(transform[2], transform[5])
     info = {
-        "resolution": "{:.6g} x {:.6g}".format(
-            math.hypot(transform[1], transform[4]),
-            math.hypot(transform[2], transform[5]),
-        ),
+        "resolution_x": "{:.6g}".format(resolution_x),
+        "resolution_y": "{:.6g}".format(resolution_y),
+        "resolution": "{:.6g} x {:.6g}".format(resolution_x, resolution_y),
         "bands": dataset.RasterCount,
         "extent": "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
             min(xs), min(ys), max(xs), max(ys)
