@@ -28,17 +28,18 @@ plugins directory, then enable **Dynamic Virtual Mosaic** from
 
 The GitHub Actions workflow builds a QGIS-installable ZIP and publishes a
 GitHub Release when a version tag is pushed. The tag must match the version in
-`dynamic_virtual_mosaic/metadata.txt`, with a `v` prefix. For example, for
-version `0.1.0`, push the tag with:
+`dynamic_virtual_mosaic/metadata.txt`, which must use three numeric components,
+with a `v` prefix on the tag. For example, for version `0.1.0`, push the tag
+with:
 
 ```powershell
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The release includes `QGIS-dynamic-virtual-mosaic-0.1.0.zip`. The ZIP contains
-the `dynamic_virtual_mosaic` plugin folder at its root, ready for installation
-through QGIS's Plugin Manager.
+The release includes `QGIS-dynamic-virtual-mosaic-v0.1.0.zip`. The ZIP
+contains the `dynamic_virtual_mosaic` plugin folder at its root, ready for
+installation through QGIS's Plugin Manager.
 
 ## Use
 
