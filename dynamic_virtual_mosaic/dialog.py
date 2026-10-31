@@ -20,15 +20,23 @@ class NumericTableWidgetItem(QTableWidgetItem):
 
     def __lt__(self, other):
         try:
-            return float(self.text()) < float(other.text())
-        except (TypeError, ValueError):
+            return float(self.text().split()[0]) < float(other.text().split()[0])
+        except (IndexError, TypeError, ValueError):
             return super().__lt__(other)
 
 
 class DynamicVirtualMosaicDialog(QDialog):
     """Present the mosaic table and connect controls to the plugin controller."""
 
-    HEADERS = ("Order", "Image", "Resolution X", "Resolution Y", "Bands", "Extent")
+    HEADERS = (
+        "Order",
+        "Image",
+        "Resolution X",
+        "Resolution Y",
+        "Bands",
+        "Extent",
+        "Extent Area",
+    )
 
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -94,7 +102,8 @@ class DynamicVirtualMosaicDialog(QDialog):
         layout.addLayout(order_actions)
 
         mosaic_actions = QHBoxLayout()
-        self._add_button(mosaic_actions, "Apply/Save", controller.apply)
+        self._add_button(mosaic_actions, "New VRT", controller.new_vrt)
+        self._add_button(mosaic_actions, "Save VRT", controller.save_vrt)
         self._add_button(
             mosaic_actions, "Create footprints", controller.create_footprints
         )
@@ -103,7 +112,7 @@ class DynamicVirtualMosaicDialog(QDialog):
         )
         layout.addLayout(mosaic_actions)
 
-        self.resize(900, 520)
+        self.resize(1020, 520)
 
     def _create_table(self):
         """Create a sortable table with an editable numeric order column."""
@@ -121,7 +130,7 @@ class DynamicVirtualMosaicDialog(QDialog):
         header.setSortIndicatorShown(True)
         table.horizontalHeaderItem(0).setToolTip(
             "Editable numeric priority. Click a column heading to sort; "
-            "Apply/Save uses the displayed row order."
+            "Save VRT uses the displayed row order."
         )
         table.setSortingEnabled(True)
         return table

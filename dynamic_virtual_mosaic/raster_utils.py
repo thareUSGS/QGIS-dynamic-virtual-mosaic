@@ -91,10 +91,27 @@ def raster_info(path):
     # Pixel vectors account for rotated rasters as well as north-up images.
     resolution_x = math.hypot(transform[1], transform[4])
     resolution_y = math.hypot(transform[2], transform[5])
+    extent_area = (max(xs) - min(xs)) * (max(ys) - min(ys))
+    projection_wkt = dataset.GetProjection()
+    projected_meters = False
+    if projection_wkt:
+        spatial_reference = osr.SpatialReference()
+        if spatial_reference.ImportFromWkt(projection_wkt) == 0:
+            projected_meters = (
+                bool(spatial_reference.IsProjected())
+                and math.isclose(
+                    spatial_reference.GetLinearUnits(),
+                    1.0,
+                    rel_tol=0.0,
+                    abs_tol=1e-12,
+                )
+            )
     info = {
         "resolution_x": "{:.6g}".format(resolution_x),
         "resolution_y": "{:.6g}".format(resolution_y),
         "resolution": "{:.6g} x {:.6g}".format(resolution_x, resolution_y),
+        "extent_area": "{:.6g}".format(extent_area),
+        "projected_meters": projected_meters,
         "bands": dataset.RasterCount,
         "extent": "{:.6f}, {:.6f}, {:.6f}, {:.6f}".format(
             min(xs), min(ys), max(xs), max(ys)

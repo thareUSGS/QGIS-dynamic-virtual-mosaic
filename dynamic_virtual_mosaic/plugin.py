@@ -35,7 +35,7 @@ from .raster_utils import (
 
 
 class DynamicVirtualMosaicPlugin:
-    """Manage a pending source list and apply it to a VRT on user request."""
+    """Manage a pending source list and save it as a VRT on user request."""
 
     def __init__(self, iface):
         self.iface = iface
@@ -114,15 +114,25 @@ class DynamicVirtualMosaicPlugin:
             values = (
                 format(self.order_values[source_key], ".15g"),
                 source_name(path),
-                info["resolution_x"],
-                info["resolution_y"],
+                "{}{}".format(
+                    info["resolution_x"],
+                    " m" if info["projected_meters"] else "",
+                ),
+                "{}{}".format(
+                    info["resolution_y"],
+                    " m" if info["projected_meters"] else "",
+                ),
                 str(info["bands"]),
                 info["extent"],
+                "{}{}".format(
+                    info["extent_area"],
+                    " m^2" if info["projected_meters"] else "",
+                ),
             )
             for column, value in enumerate(values):
                 item = (
                     NumericTableWidgetItem(value)
-                    if column == 0
+                    if column in (0, 6)
                     else QTableWidgetItem(value)
                 )
                 if column == 0:
@@ -415,11 +425,35 @@ class DynamicVirtualMosaicPlugin:
 
     # VRT creation and map-layer refresh
 
-    def apply(self):
+    def new_vrt(self):
+        """Stop the current editing session and start with an empty source list."""
+        if self.images or self.output_path:
+            response = QMessageBox.question(
+                self.widget,
+                "New VRT",
+                "Start a new VRT editing session? The current table will be "
+                "cleared, but any saved VRT file will remain on disk.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+
+        self.images = []
+        self.order_values = {}
+        self.output_path = None
+        self.applied_order = []
+        self.undo_stack = []
+        self.widget.nodata_input.clear()
+        self.widget.allow_projection_difference.setChecked(False)
+        self._replace_mosaic_layer(None)
+        self._refresh_table()
+
+    def save_vrt(self):
         """Build a replacement VRT, then refresh its QGIS layer after success."""
         self._sync_images_from_table()
         if not self.images:
-            self._error("Add at least one image before applying the mosaic.")
+            self._error("Add at least one image before saving the VRT.")
             return
 
         nodata_text = self.widget.nodata_input.text().strip()
@@ -542,7 +576,7 @@ class DynamicVirtualMosaicPlugin:
         except (RuntimeError, OSError, ValueError, ET.ParseError) as error:
             if restore_layer_path:
                 self._replace_mosaic_layer(restore_layer_path)
-            self._error("Could not apply the mosaic: {}".format(error))
+            self._error("Could not save the VRT: {}".format(error))
             return
         finally:
             if temporary_path and os.path.exists(temporary_path):
@@ -551,6 +585,10 @@ class DynamicVirtualMosaicPlugin:
         self.applied_order = list(self.images)
         self._refresh_table()
         self._replace_mosaic_layer(self.output_path, force=True)
+
+    def apply(self):
+        """Retain the previous controller entry point for compatibility."""
+        self.save_vrt()
 
     def _replace_mosaic_layer(self, path, force=False):
         """Reload the VRT as a top-level layer, above groups and other layers."""
@@ -590,7 +628,7 @@ class DynamicVirtualMosaicPlugin:
     def create_footprints(self):
         """Create one transformed polygon per source in the currently applied VRT."""
         if not self.output_path or not os.path.isfile(self.output_path):
-            self._error("Apply or load a VRT before creating footprints.")
+            self._error("Save or load a VRT before creating footprints.")
             return
         try:
             layer = create_footprint_layer(

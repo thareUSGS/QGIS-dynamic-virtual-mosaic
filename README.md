@@ -53,13 +53,19 @@ through QGIS's Plugin Manager.
    order. **Undo** restores the previous pending table and output selection;
    it does not roll back a VRT that was already applied to disk.
    Click a column heading to sort the table. The numeric **Order** values can
-   be edited, and Apply/Save uses the currently displayed row order.
-4. Choose **Apply/Save** to write the VRT. On the first apply, choose an output
-   `.vrt` path. Later applies rebuild and overwrite that file, then reload the
-   VRT in QGIS at the top of the layer list, outside any selected group. Source
-   references are stored relative to the output directory whenever possible.
-   Optionally enter a numeric **VRT NoData override**; leave it blank to use
-   GDAL's normal source NoData behavior. The value applies to every VRT band.
+   be edited, and **Save VRT** uses the currently displayed row order. The
+   **Extent Area** column is the area of each image's displayed bounding
+   extent. For rasters in projected meter coordinate systems, resolution
+   values show `m` and extent areas show `m^2`.
+4. Choose **Save VRT** to write the VRT. If no VRT is currently being edited,
+   choose an output `.vrt` path; later saves rebuild and overwrite that file,
+   then reload the VRT in QGIS at the top of the layer list, outside any
+   selected group. Source references are stored relative to the output
+   directory whenever possible. Choose **New VRT** to clear the current
+   editing session, remove its displayed VRT layer from the project, and start
+   an empty source list; this does not delete saved VRT files. Optionally enter
+   a numeric **VRT NoData override**; leave it blank to use GDAL's normal
+   source NoData behavior. The value applies to every VRT band.
 5. Choose **Create footprints** to add an in-memory polygon layer containing
    one footprint per image, with the full source address in the `path` field
    and separate `resolution_X` and `resolution_Y` attributes. Local file paths
@@ -71,7 +77,7 @@ through QGIS's Plugin Manager.
    raster and can take longer, especially for large or remote sources. The
    footprint layer is inserted at the top of the layer list with 50% opacity.
 
-The VRT is created or changed only by **Apply/Save**. Each save refreshes the
+The VRT is created or changed only by **Save VRT**. Each save refreshes the
 displayed raster layer so source-order changes are visible. The table's
 **Order** column is an editable numeric sort key.
 
