@@ -16,7 +16,7 @@ from qgis.PyQt.QtWidgets import (
 
 
 class NumericTableWidgetItem(QTableWidgetItem):
-    """Sort order-column values numerically instead of lexicographically."""
+    """Sort numeric values instead of comparing their text lexicographically."""
 
     def __lt__(self, other):
         try:
@@ -33,9 +33,9 @@ class DynamicVirtualMosaicDialog(QDialog):
         "Image",
         "Resolution X",
         "Resolution Y",
+        "Extent Area",
         "Bands",
         "Extent",
-        "Extent Area",
     )
 
     def __init__(self, parent, controller):
@@ -96,6 +96,9 @@ class DynamicVirtualMosaicDialog(QDialog):
             order_actions, "Move up", lambda: controller.move_selected(-1)
         )
         self._add_button(
+            order_actions, "Move to top", controller.move_selected_to_top
+        )
+        self._add_button(
             order_actions, "Move down", lambda: controller.move_selected(1)
         )
         self._add_button(order_actions, "Undo", controller.undo)
@@ -134,6 +137,19 @@ class DynamicVirtualMosaicDialog(QDialog):
         )
         table.setSortingEnabled(True)
         return table
+
+    def set_metric_units(self, metric):
+        """Label the resolution and area columns when all sources use meters."""
+        headers = list(self.HEADERS)
+        if metric:
+            headers[2] = "Resolution X (m)"
+            headers[3] = "Resolution Y (m)"
+            headers[4] = "Extent Area (km^2)"
+        self.table.setHorizontalHeaderLabels(headers)
+        self.table.horizontalHeaderItem(0).setToolTip(
+            "Editable numeric priority. Click a column heading to sort; "
+            "Save VRT uses the displayed row order."
+        )
 
     def _add_button(self, layout, label, callback):
         """Add a parented control that invokes its matching controller action."""

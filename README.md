@@ -52,11 +52,14 @@ through QGIS's Plugin Manager.
    **Move up**, **Move down**, and **Remove** to edit the pending image
    order. **Undo** restores the previous pending table and output selection;
    it does not roll back a VRT that was already applied to disk.
-   Click a column heading to sort the table. The numeric **Order** values can
-   be edited, and **Save VRT** uses the currently displayed row order. The
-   **Extent Area** column is the area of each image's displayed bounding
-   extent. For rasters in projected meter coordinate systems, resolution
-   values show `m` and extent areas show `m^2`.
+   Click a column heading to sort the table. **Resolution X**, **Resolution
+   Y**, and **Extent Area** are numeric columns; the editable numeric **Order**
+   values and **Save VRT** use the currently displayed row order. Extent Area
+   is calculated from each image's displayed bounding extent and appears
+   directly after Resolution Y. When all source images use projected meters,
+   the resolution headers show `(m)` and Extent Area is converted to and
+   labeled `(km^2)`. Otherwise, values remain in their native coordinate units
+   and headers omit unit labels, avoiding misleading units for mixed CRSs.
 4. Choose **Save VRT** to write the VRT. If no VRT is currently being edited,
    choose an output `.vrt` path; later saves rebuild and overwrite that file,
    then reload the VRT in QGIS at the top of the layer list, outside any

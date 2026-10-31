@@ -10,7 +10,7 @@ import zipfile
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_DIRECTORY = REPOSITORY_ROOT / "dynamic_virtual_mosaic"
-VERSION_PATTERN = re.compile(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?\Z")
+VERSION_PATTERN = re.compile(r"\d+\.\d+\.\d+(?:\.\d+)?(?:[-+][0-9A-Za-z.-]+)?\Z")
 
 
 def read_plugin_version():

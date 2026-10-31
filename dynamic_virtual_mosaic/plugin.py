@@ -107,32 +107,31 @@ class DynamicVirtualMosaicPlugin:
         signals_blocked = table.blockSignals(True)
         table.setSortingEnabled(False)
         self.table.setRowCount(len(self.images))
-        for row, path in enumerate(self.images):
+        raster_infos = [raster_info(path) for path in self.images]
+        all_projected_meters = bool(raster_infos) and all(
+            info["projected_meters"] for info in raster_infos
+        )
+        self.widget.set_metric_units(all_projected_meters)
+        for row, (path, info) in enumerate(zip(self.images, raster_infos)):
             source_key = path_key(path)
             self.order_values.setdefault(source_key, float(row + 1))
-            info = raster_info(path)
             values = (
                 format(self.order_values[source_key], ".15g"),
                 source_name(path),
-                "{}{}".format(
-                    info["resolution_x"],
-                    " m" if info["projected_meters"] else "",
-                ),
-                "{}{}".format(
-                    info["resolution_y"],
-                    " m" if info["projected_meters"] else "",
+                info["resolution_x"],
+                info["resolution_y"],
+                format(
+                    float(info["extent_area"])
+                    / (1000000.0 if all_projected_meters else 1.0),
+                    ".6g",
                 ),
                 str(info["bands"]),
                 info["extent"],
-                "{}{}".format(
-                    info["extent_area"],
-                    " m^2" if info["projected_meters"] else "",
-                ),
             )
             for column, value in enumerate(values):
                 item = (
                     NumericTableWidgetItem(value)
-                    if column in (0, 6)
+                    if column in (0, 2, 3, 4)
                     else QTableWidgetItem(value)
                 )
                 if column == 0:
@@ -405,6 +404,22 @@ class DynamicVirtualMosaicPlugin:
         )
         self._refresh_table()
         self.table.selectRow(destination)
+
+    def move_selected_to_top(self):
+        """Move the selected source to the first row without applying changes."""
+        self._sync_images_from_table()
+        row = self.table.currentRow()
+        if row <= 0 or row >= len(self.images):
+            return
+        self._push_undo()
+        self.table.setSortingEnabled(False)
+        self.table.horizontalHeader().setSortIndicator(
+            -1, Qt.SortOrder.AscendingOrder
+        )
+        source = self.images.pop(row)
+        self.images.insert(0, source)
+        self._refresh_table()
+        self.table.selectRow(0)
 
     def undo(self):
         """Restore the previous table, output path, and applied-order snapshot."""
