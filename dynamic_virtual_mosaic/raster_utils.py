@@ -234,7 +234,10 @@ def make_sources_relative(vrt_path, final_path):
 
 def build_vrt(path, sources, nodata=None, allow_projection_difference=False):
     """Build a VRT with explicit NoData and projection-mismatch options."""
-    options = {"allowProjectionDifference": allow_projection_difference}
+    options = {
+        "allowProjectionDifference": allow_projection_difference,
+        "resampleAlg": "bilinear",
+    }
     if nodata is not None:
         options["VRTNodata"] = nodata
 

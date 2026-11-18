@@ -69,7 +69,9 @@ installation through QGIS's Plugin Manager.
    editing session, remove its displayed VRT layer from the project, and start
    an empty source list; this does not delete saved VRT files. Optionally enter
    a numeric **VRT NoData override**; leave it blank to use GDAL's normal
-   source NoData behavior. The value applies to every VRT band.
+   source NoData behavior. The value applies to every VRT band. VRT sources
+   are resampled with bilinear interpolation, which is well suited to
+   continuous data such as digital elevation models (DEMs).
 5. Choose **Create footprints** to add an in-memory polygon layer containing
    one footprint per image, with the full source address in the `path` field
    and separate `resolution_X` and `resolution_Y` attributes. Local file paths
